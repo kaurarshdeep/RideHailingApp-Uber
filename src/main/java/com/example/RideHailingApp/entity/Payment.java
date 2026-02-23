@@ -1,26 +1,29 @@
 package com.example.RideHailingApp.entity;
 
+import com.example.RideHailingApp.domain.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.data.annotation.Id;
 
 @Entity
-@Table(name="payments")
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class Payment {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long tripId;
+    private Long rideId;
 
-    private String status;
+    private Double amount;
 
-    private String pspReference;
+    @Enumerated(EnumType.STRING)
+    private PaymentStatus status;
 
+    @Column(unique = true, nullable = false)
     private String idempotencyKey;
 }

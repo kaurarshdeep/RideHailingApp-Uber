@@ -26,6 +26,7 @@ public class DriverService {
         geoService.updateDriverLocation(driverId, lat, lng);
     }
 
+    // Atomic status update
     @Transactional
     public boolean tryAssignDriver(Long driverId) {
 

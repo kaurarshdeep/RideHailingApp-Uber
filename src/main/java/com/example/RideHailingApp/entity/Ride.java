@@ -28,5 +28,6 @@ public class Ride {
     private Double pickupLng;
     private Double destinationLat;
     private Double destinationLng;
+    private Double fare;
 
 }

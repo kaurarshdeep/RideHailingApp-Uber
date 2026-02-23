@@ -12,6 +12,7 @@ public class DriverController {
 
     private final DriverService driverService;
 
+    // Update driver location
     @PostMapping("/{id}/location")
     public void updateLocation(
             @PathVariable Long id,
