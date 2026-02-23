@@ -7,7 +7,7 @@ import com.example.RideHailingApp.entity.Driver;
 import com.example.RideHailingApp.entity.Ride;
 import com.example.RideHailingApp.repository.DriverRepository;
 import com.example.RideHailingApp.repository.RideRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -51,32 +51,29 @@ public class RideService {
             throw new RuntimeException("No drivers available");
         }
 
-        Driver nearestDriver = null;
-        double minDistance = Double.MAX_VALUE;
-
+        drivers.sort(
+                (d1,d2)-> {
+                    double dist1 = calculateDistance(
+                        ride.getPickupLat(),ride.getPickupLng(),
+                        d1.getLatitude(),d1.getLongitude());
+                    double dist2 = calculateDistance(
+                            ride.getPickupLat(),ride.getPickupLng(),
+                            d2.getLatitude(),d2.getLongitude());
+                    return Double.compare(dist1, dist2);
+                });
+        Driver assignedDriver = null;
         for (Driver driver : drivers) {
-
-            double distance = calculateDistance(
-                    ride.getPickupLat(),
-                    ride.getPickupLng(),
-                    driver.getLatitude(),
-                    driver.getLongitude()
-            );
-
-            if (distance < minDistance) {
-                minDistance = distance;
-                nearestDriver = driver;
+            int updated = driverRepository.updateDriverStatusIfAvailable(driver.getId(),
+                    DriverStatus.AVAILABLE, DriverStatus.BUSY);
+            if (updated == 1) {
+                assignedDriver = driver;
+                break;
             }
         }
-
-        if (nearestDriver == null) {
-            throw new RuntimeException("No drivers available");
-        }
-
-        nearestDriver.setStatus(DriverStatus.BUSY);
-        driverRepository.save(nearestDriver);
-
-        ride.setDriverId(nearestDriver.getId());
+            if(assignedDriver == null){
+                throw new RuntimeException("No drivers available");
+            }
+        ride.setDriverId(assignedDriver.getId());
         ride.setStatus(RideStatus.ASSIGNED);
 
         return rideRepository.save(ride);
