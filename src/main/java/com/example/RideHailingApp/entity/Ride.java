@@ -21,7 +21,7 @@ public class Ride {
     private Long riderId;
     @Enumerated(EnumType.STRING)
     private RideStatus status;
-    private long driverId;
+    private Long driverId;
     private LocalDateTime createdAt;
     private Double surgeMultiplier;
     private Double pickupLat;
