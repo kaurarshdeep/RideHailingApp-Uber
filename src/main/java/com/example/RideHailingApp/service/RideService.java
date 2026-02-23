@@ -18,7 +18,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RideService {
     private final RideRepository rideRepository;
-    private  final DriverRepository driverRepository;
+    private final DriverRepository driverRepository;
 
     public Ride createRide(CreateRideRequest request) {
 
@@ -38,7 +38,7 @@ public class RideService {
 
     @Transactional
     public Ride assignDriver(Long rideId) {
-        Ride ride = rideRepository.findById(rideId).orElseThrow(()->
+        Ride ride = rideRepository.findById(rideId).orElseThrow(() ->
                 new RuntimeException("Ride not found"));
 
         if (ride.getStatus() != RideStatus.REQUESTED) {
@@ -51,15 +51,51 @@ public class RideService {
             throw new RuntimeException("No drivers available");
         }
 
-        Driver driver = drivers.get(0); // temporary logic
+        Driver nearestDriver = null;
+        double minDistance = Double.MAX_VALUE;
 
-        driver.setStatus(DriverStatus.BUSY);
-        driverRepository.save(driver);
+        for (Driver driver : drivers) {
 
-        ride.setDriverId(driver.getId());
+            double distance = calculateDistance(
+                    ride.getPickupLat(),
+                    ride.getPickupLng(),
+                    driver.getLatitude(),
+                    driver.getLongitude()
+            );
+
+            if (distance < minDistance) {
+                minDistance = distance;
+                nearestDriver = driver;
+            }
+        }
+
+        if (nearestDriver == null) {
+            throw new RuntimeException("No drivers available");
+        }
+
+        nearestDriver.setStatus(DriverStatus.BUSY);
+        driverRepository.save(nearestDriver);
+
+        ride.setDriverId(nearestDriver.getId());
         ride.setStatus(RideStatus.ASSIGNED);
 
         return rideRepository.save(ride);
     }
 
+    private double calculateDistance(double lat1, double lon1,
+                                     double lat2, double lon2) {
+
+        final int R = 6371; // Earth radius in KM
+
+        double latDistance = Math.toRadians(lat2 - lat1);
+        double lonDistance = Math.toRadians(lon2 - lon1);
+
+        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
+
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        return R * c;
+    }
 }
