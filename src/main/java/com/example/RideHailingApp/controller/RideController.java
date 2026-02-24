@@ -31,9 +31,5 @@ public class RideController {
         return rideService.assignDriver(id);
     }
 
-    // Driver Accepts Ride
-    @PostMapping("/{driverId}/accept")
-    public Ride acceptRide(@PathVariable Long driverId) {
-        return rideService.acceptRide(driverId);
-    }
+
 }

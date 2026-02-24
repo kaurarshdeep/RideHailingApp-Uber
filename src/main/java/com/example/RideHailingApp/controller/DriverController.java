@@ -1,7 +1,9 @@
 package com.example.RideHailingApp.controller;
 
 import com.example.RideHailingApp.dto.UpdateLocationRequest;
+import com.example.RideHailingApp.entity.Ride;
 import com.example.RideHailingApp.service.DriverService;
+import com.example.RideHailingApp.service.RideService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 public class DriverController {
 
     private final DriverService driverService;
+    private final RideService rideService;
 
     // Update driver location
     @PostMapping("/{id}/location")
@@ -23,5 +26,16 @@ public class DriverController {
                 request.getLatitude(),
                 request.getLongitude()
         );
+    }
+
+    // Driver Accepts Ride
+    @PostMapping("/{driverId}/accept")
+    public Ride acceptRide(@PathVariable Long driverId) {
+        return rideService.acceptRide(driverId);
+    }
+    //driver declines ride
+    @PostMapping("/{driverId}/decline")
+    public Ride declineRide(@PathVariable Long driverId) {
+        return rideService.declineRide(driverId);
     }
 }

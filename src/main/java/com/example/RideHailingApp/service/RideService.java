@@ -35,7 +35,7 @@ public class RideService {
                 .destinationLng(request.getDestinationLng())
                 .status(RideStatus.REQUESTED)
                 .surgeMultiplier(1.0)
-                .assignedAt(LocalDateTime.now())
+                //.assignedAt(LocalDateTime.now())
                 .build();
 
         return rideRepository.save(ride);
@@ -165,8 +165,34 @@ public class RideService {
 
         for (Ride ride : expiredRides) {
             ride.setStatus(RideStatus.EXPIRED);
-            driverService.makeDriverAvailable(ride.getDriverId());
+            if (ride.getDriverId() != null) {
+                driverService.makeDriverAvailable(ride.getDriverId());
+            }
             ride.setDriverId(null);
         }
+    }
+
+    @Transactional
+    public Ride declineRide(Long driverId) {
+
+        Ride ride = rideRepository
+                .findByDriverIdAndStatus(driverId, RideStatus.ASSIGNED)
+                .orElseThrow(() -> new RuntimeException("No ride to decline"));
+
+        // Make driver available again
+        driverRepository.updateDriverStatusIfAvailable(
+                driverId,
+                DriverStatus.BUSY,
+                DriverStatus.AVAILABLE
+        );
+
+        // Remove driver from ride
+        ride.setDriverId(null);
+        ride.setStatus(RideStatus.REQUESTED);
+
+        rideRepository.save(ride);
+
+        // Try assigning next nearest driver
+        return assignDriver(ride.getId());
     }
 }
