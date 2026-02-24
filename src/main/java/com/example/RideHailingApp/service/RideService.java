@@ -70,9 +70,11 @@ public class RideService {
             if (driverService.tryAssignDriver(driverId)) {
 
                 ride.setDriverId(driverId);
+                System.out.println("Nearest drivers: " + driverId);
                 ride.setStatus(RideStatus.ASSIGNED);
 
                 return rideRepository.save(ride);
+
             }
         }
 

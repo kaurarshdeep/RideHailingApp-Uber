@@ -3,9 +3,10 @@ package com.example.RideHailingApp.entity;
 import com.example.RideHailingApp.domain.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.annotation.Id;
+import jakarta.persistence.Id;
 
 @Entity
+@Table(name="payments")
 @Getter
 @Setter
 @Builder

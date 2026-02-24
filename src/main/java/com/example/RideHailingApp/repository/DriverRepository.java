@@ -2,7 +2,7 @@ package com.example.RideHailingApp.repository;
 
 import com.example.RideHailingApp.domain.DriverStatus;
 import com.example.RideHailingApp.entity.Driver;
-import io.lettuce.core.dynamic.annotation.Param;
+import org.springframework.data.repository.query.Param;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
