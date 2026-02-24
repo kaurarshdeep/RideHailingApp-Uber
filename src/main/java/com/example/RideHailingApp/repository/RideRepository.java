@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -18,6 +20,9 @@ public interface RideRepository extends JpaRepository<Ride,Long> {
     Optional<Ride> findByDriverIdAndStatus(Long driverId, RideStatus status);
 
     @Query(""" 
-SELECT r FROM Ride r WHERE r.driverId = :driverId AND r.status = :status """)
+    SELECT r FROM Ride r WHERE r.driverId = :driverId AND r.status = :status """)
     Optional<Ride> findAssignedRide(@Param("driverId") Long driverId,@Param("status") RideStatus status);
+
+    List<Ride> findByStatusAndAssignedAtBefore(RideStatus status,LocalDateTime time);
+
 }

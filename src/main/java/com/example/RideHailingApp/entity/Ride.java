@@ -18,11 +18,13 @@ public class Ride {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Version
+    private Long version;
     private Long riderId;
     @Enumerated(EnumType.STRING)
     private RideStatus status;
     private Long driverId;
-    private LocalDateTime createdAt;
+    private LocalDateTime assignedAt;
     private Double surgeMultiplier;
     private Double pickupLat;
     private Double pickupLng;

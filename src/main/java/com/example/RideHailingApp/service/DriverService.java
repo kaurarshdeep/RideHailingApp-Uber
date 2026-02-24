@@ -38,4 +38,14 @@ public class DriverService {
 
         return updated == 1;
     }
+
+    @Transactional
+    public void makeDriverAvailable(Long driverId) {
+
+        driverRepository.updateDriverStatusIfAvailable(
+                driverId,
+                DriverStatus.BUSY,
+                DriverStatus.AVAILABLE
+        );
+    }
 }

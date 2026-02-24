@@ -8,6 +8,7 @@ import com.example.RideHailingApp.entity.Ride;
 import com.example.RideHailingApp.repository.DriverRepository;
 import com.example.RideHailingApp.repository.RideRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,7 +35,7 @@ public class RideService {
                 .destinationLng(request.getDestinationLng())
                 .status(RideStatus.REQUESTED)
                 .surgeMultiplier(1.0)
-                .createdAt(LocalDateTime.now())
+                .assignedAt(LocalDateTime.now())
                 .build();
 
         return rideRepository.save(ride);
@@ -72,6 +73,7 @@ public class RideService {
                 ride.setDriverId(driverId);
                 System.out.println("Nearest drivers: " + driverId);
                 ride.setStatus(RideStatus.ASSIGNED);
+                ride.setAssignedAt(LocalDateTime.now());
 
                 return rideRepository.save(ride);
 
@@ -147,5 +149,24 @@ public class RideService {
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
         return R * c;
+    }
+
+    @Scheduled(fixedRate = 5000) // runs every 5 sec
+    @Transactional
+    public void expireUnacceptedRides() {
+
+        LocalDateTime expiryTime = LocalDateTime.now().minusSeconds(30);
+
+        List<Ride> expiredRides =
+                rideRepository.findByStatusAndAssignedAtBefore(
+                        RideStatus.ASSIGNED,
+                        expiryTime
+                );
+
+        for (Ride ride : expiredRides) {
+            ride.setStatus(RideStatus.EXPIRED);
+            driverService.makeDriverAvailable(ride.getDriverId());
+            ride.setDriverId(null);
+        }
     }
 }
