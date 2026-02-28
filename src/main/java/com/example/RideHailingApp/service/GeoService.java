@@ -31,10 +31,13 @@ public class GeoService {
         GeoResults<RedisGeoCommands.GeoLocation<String>> results =
                 redisTemplate.opsForGeo().radius(
                         DRIVER_GEO_KEY,
-                        new Circle(
+                        new   Circle(
                                 new Point(lng, lat),
                                 new Distance(radiusKm, Metrics.KILOMETERS)
-                        )
+                        ),
+                        RedisGeoCommands.GeoRadiusCommandArgs
+                                .newGeoRadiusArgs().includeDistance()
+                                .sortAscending()
                 );
 
         if (results == null) return List.of();

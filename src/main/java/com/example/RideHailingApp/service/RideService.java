@@ -5,6 +5,9 @@ import com.example.RideHailingApp.domain.RideStatus;
 import com.example.RideHailingApp.dto.CreateRideRequest;
 import com.example.RideHailingApp.entity.Driver;
 import com.example.RideHailingApp.entity.Ride;
+import com.example.RideHailingApp.exception.DriverNotFoundException;
+import com.example.RideHailingApp.exception.InvalidRideStateException;
+import com.example.RideHailingApp.exception.RideNotFoundException;
 import com.example.RideHailingApp.repository.DriverRepository;
 import com.example.RideHailingApp.repository.RideRepository;
 import lombok.RequiredArgsConstructor;
@@ -35,7 +38,6 @@ public class RideService {
                 .destinationLng(request.getDestinationLng())
                 .status(RideStatus.REQUESTED)
                 .surgeMultiplier(1.0)
-                //.assignedAt(LocalDateTime.now())
                 .build();
 
         return rideRepository.save(ride);
@@ -52,10 +54,10 @@ public class RideService {
     public Ride assignDriver(Long rideId) {
 
         Ride ride = rideRepository.findById(rideId)
-                .orElseThrow(() -> new RuntimeException("Ride not found"));
+                .orElseThrow(() -> new RideNotFoundException("Ride not found"));
 
         if (ride.getStatus() != RideStatus.REQUESTED) {
-            throw new RuntimeException("Ride not in REQUESTED state");
+            throw new InvalidRideStateException("Ride not in REQUESTED state");
         }
 
         List<String> nearestDriverIds = geoService.findNearestDrivers(
@@ -71,7 +73,6 @@ public class RideService {
             if (driverService.tryAssignDriver(driverId)) {
 
                 ride.setDriverId(driverId);
-                System.out.println("Nearest drivers: " + driverId);
                 ride.setStatus(RideStatus.ASSIGNED);
                 ride.setAssignedAt(LocalDateTime.now());
 
@@ -80,7 +81,7 @@ public class RideService {
             }
         }
 
-        throw new RuntimeException("No drivers available");
+        throw new DriverNotFoundException("No drivers available");
     }
 
     // DRIVER ACCEPT
@@ -89,7 +90,7 @@ public class RideService {
 
         Ride ride = rideRepository
                 .findByDriverIdAndStatus(driverId, RideStatus.ASSIGNED)
-                .orElseThrow(() -> new RuntimeException("No ride to accept"));
+                .orElseThrow(() -> new RideNotFoundException("No ride to accept"));
 
         ride.setStatus(RideStatus.ACCEPTED);
 
@@ -100,11 +101,11 @@ public class RideService {
     public Ride endTrip(Long rideId) {
 
         Ride ride = rideRepository.findById(rideId)
-                .orElseThrow(() -> new RuntimeException("Ride not found"));
+                .orElseThrow(() -> new RideNotFoundException("Ride not found"));
 
         if (ride.getStatus() != RideStatus.ACCEPTED &&
                 ride.getStatus() != RideStatus.STARTED) {
-            throw new RuntimeException("Trip not active");
+            throw new InvalidRideStateException("Trip not active");
         }
 
         double fare = calculateFare(ride);
@@ -113,11 +114,11 @@ public class RideService {
         ride.setStatus(RideStatus.COMPLETED);
 
         Driver driver = driverRepository.findById(ride.getDriverId())
-                .orElseThrow(() -> new RuntimeException("Driver not found"));
+                .orElseThrow(() -> new DriverNotFoundException("Driver not found"));
 
         driver.setStatus(DriverStatus.AVAILABLE);
 
-        return rideRepository.save(ride);
+        return ride;
     }
 
     private double calculateFare(Ride ride) {
@@ -164,7 +165,11 @@ public class RideService {
                 );
 
         for (Ride ride : expiredRides) {
-            ride.setStatus(RideStatus.EXPIRED);
+            int updated = rideRepository.expireRideIfStillAssigned(ride.getId());
+
+            if (updated == 1) {
+                driverService.makeDriverAvailable(ride.getDriverId());
+            }
             if (ride.getDriverId() != null) {
                 driverService.makeDriverAvailable(ride.getDriverId());
             }
@@ -177,7 +182,7 @@ public class RideService {
 
         Ride ride = rideRepository
                 .findByDriverIdAndStatus(driverId, RideStatus.ASSIGNED)
-                .orElseThrow(() -> new RuntimeException("No ride to decline"));
+                .orElseThrow(() -> new RideNotFoundException("No ride to decline"));
 
         // Make driver available again
         driverRepository.updateDriverStatusIfAvailable(

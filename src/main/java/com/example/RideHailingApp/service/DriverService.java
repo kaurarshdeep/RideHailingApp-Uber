@@ -2,6 +2,7 @@ package com.example.RideHailingApp.service;
 
 import com.example.RideHailingApp.domain.DriverStatus;
 import com.example.RideHailingApp.entity.Driver;
+import com.example.RideHailingApp.exception.DriverNotFoundException;
 import com.example.RideHailingApp.repository.DriverRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,7 +19,7 @@ public class DriverService {
     public void updateLocation(Long driverId, double lat, double lng) {
 
         Driver driver = driverRepository.findById(driverId)
-                .orElseThrow(() -> new RuntimeException("Driver not found"));
+                .orElseThrow(() -> new DriverNotFoundException("Driver not found"));
 
         driver.setLatitude(lat);
         driver.setLongitude(lng);

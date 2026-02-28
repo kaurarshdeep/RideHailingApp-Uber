@@ -6,6 +6,7 @@ import io.lettuce.core.dynamic.annotation.Param;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
@@ -25,4 +26,13 @@ public interface RideRepository extends JpaRepository<Ride,Long> {
 
     List<Ride> findByStatusAndAssignedAtBefore(RideStatus status,LocalDateTime time);
 
+
+    @Modifying
+    @Query("""
+    UPDATE Ride r
+    SET r.status = 'EXPIRED'
+    WHERE r.id = :rideId
+      AND r.status = 'ASSIGNED'
+""")
+    int expireRideIfStillAssigned(Long rideId);
 }
